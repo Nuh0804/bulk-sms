@@ -1,5 +1,0 @@
-2025-08-20 21:32:27 Log begins
-2025-08-20 21:33:10 Log begins
-2025-08-20 21:34:18 SMS HTTP-request sender:+4477665544 request: 'Could not fetch content, sorry.' url: '' reply: -1 ''
-2025-08-20 21:34:21 SMS HTTP-request sender:+4477665544 request: 'Could not fetch content, sorry.' url: '' reply: -1 ''
-2025-08-20 21:34:44 send-SMS request added - sender:myuser:123456 127.0.0.1 target:255700000001 request: 'HelloWorld'
