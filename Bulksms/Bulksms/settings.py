@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-@gbu&%haz8=qullf7zi2ecl0r)c9q&u&_a9=mx-nz38d!pd=cv
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:8884',
+    'http://192.168.248.238:3000',
+    
+]
 
 # Application definition
 
@@ -37,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'graphene_django',
+    'rest_framework',
     'sms_api'
 ]
 
@@ -128,7 +132,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-GRAPHENE = {
-    "SCHEMA": "Bulksms.main_schema.schema"
-}
