@@ -22,3 +22,15 @@ class Recipient(models.Model):
 
     def __str__(self):
         return f'message {self.message.message} to {self.number} '
+
+
+class Dlr(models.Model):
+    smsc = models.CharField(max_length=500)
+    timestamp = models.IntegerField()  # let DB set it
+    destination = models.CharField(max_length=100)
+    source = models.CharField(max_length=100)
+    service = models.CharField(max_length=160)
+    url = models.TextField()
+    mask = models.IntegerField()
+    status = models.IntegerField()
+    boxc = models.CharField(max_length=100)

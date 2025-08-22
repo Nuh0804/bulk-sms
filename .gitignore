@@ -1,4 +1,7 @@
 
 base/*
 kannel.access
-
+Bulksms/Bulksms/__pycache__/*
+Bulksms/sms_api/migrations/__pycache__/*
+Bulksms/sms_api/__pycache__/*
+SMPPSim/smppsim0.log*
