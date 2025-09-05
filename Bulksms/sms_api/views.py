@@ -1,6 +1,7 @@
 import re
-import requests
+from datetime import datetime, timezone
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework import status
@@ -28,21 +29,22 @@ class ReceiveMessage(APIView):
         )
 
 class SmsDlr(APIView):
-    def get(self, request, sender, receiver, msg, dlr_val, dlr_msg, reply, timestamp):
+    def get(self, request, sender, receiver, dlr_val, reply, message):
         # Capture all DLR data
         dlr_data = {
             "sender": sender,
             "receiver": receiver,
-            "msg": msg,
             "dlr_val": dlr_val,
-            "dlr_msg": dlr_msg,
             "reply": reply,
-            "timestamp": timestamp,
+            "msg": message
         }
 
         # Print or save to database
         print("DLR received:", dlr_data)
 
+        # MessageLog.objects.create(
+
+        # )
         return Response(
             {"status": "dlr received", "data": dlr_data},
             status=status.HTTP_200_OK
@@ -72,15 +74,16 @@ class SendSms(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Step 1: Extract required placeholders from the template
-            required_placeholders = extract_placeholders(message_template)
-            # Step 2: Create campaign
+            # Step 1: Create campaign
             campaign = SMSCampaign.objects.create(
                 message_template=message_template,
                 name=campaign_name
             )
+            # Step 2: Extract required placeholders from the template
+            required_placeholders = extract_placeholders(message_template)
 
             # Step 3: Save recipients with personalized messages
+            data = []
             for recipient in recipients:
                 phone = recipient.get("phone")
                 params = recipient.get("params", {})
@@ -96,22 +99,22 @@ class SendSms(APIView):
                 # Format message
                 message = message_template.format(**params)
 
-                Recipient.objects.create(
+                saved_recepient = Recipient.objects.create(
                     phone_number=phone,
                     campaign=campaign,
                     params=params,
-                    personalized_message=message
+                    personalized_message=message,
                 )
-
-            # Step 4: Send SMS
-            data = []
-            recipients_query = Recipient.objects.filter(campaign=campaign.pk)
-
-            for r in recipients_query:
-                response = SMSUtils.send_sms(r.phone_number, r.personalized_message)
+                response = SMSUtils.send_sms(phone, message)
+                text = response.text.split(": ")
+                saved_recepient.status = True if text[0]==0 else False
+                saved_recepient.dlr_value = text[0]
+                saved_recepient.response_text = text[1]
+                saved_recepient.delivered_at = datetime.now(timezone.utc)
+                saved_recepient.save()
                 data.append({
-                    "phone": r.phone_number,  # ✅ fixed
-                    "personalized_message": r.personalized_message,  # ✅ fixed
+                    "phone": phone,  
+                    "personalized_message": message,  
                     "status_code": response.status_code,
                     "response": response.text.strip()
                 })
@@ -128,3 +131,26 @@ class SendSms(APIView):
         recipients = Recipient.objects.prefetch_related("campaign").all()
         serializer = RecipientSerializer(recipients, many=True)
         return Response(serializer.data)
+    
+
+class CampaignViewSet(ModelViewSet):
+    def get_queryset(self):
+        return SMSCampaign.objects.all()
+    
+    serializer_class = CampaignSerializer
+
+
+class AddRecipient(APIView):
+    def post(self, request, pk):
+        serializer = RecipientCreateSerializer(data = request.data, many = True)
+        campaign_queryset = SMSCampaign.objects.filter(id = pk).first()
+        if not campaign_queryset:
+            return Response({"data": None, "message": "no campaign found"}, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid(raise_exception=True):
+            recipients = []
+            for validated_data in serializer.validated_data:
+                personalized_message = campaign_queryset.message_template.format(**validated_data["params"])
+                recipients.append(Recipient(campaign=campaign_queryset, personalized_message = personalized_message, **validated_data))
+            Recipient.objects.bulk_create(recipients)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

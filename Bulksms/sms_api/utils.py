@@ -12,7 +12,8 @@ class SMSUtils:
                 "password": cls.PASSWORD,
                 "to": phone,
                 "text": message,
-                "from": "255676855433",
+                "from": "KILAKONA",
+                "smsc": "KilaKona",
                 "dlr-mask" : 31
             }
 

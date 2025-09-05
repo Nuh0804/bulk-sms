@@ -7,3 +7,4 @@ Bulksms/sms_api/__pycache__/*
 SMPPSim/smppsim0.log*
 SMPPSim/
 .env
+Bulksms/sms_api/migrations/
